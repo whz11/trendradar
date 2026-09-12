@@ -1,14 +1,11 @@
-```yaml
+
 # ═══════════════════════════════════════════════════════════════
 #                    TrendRadar 配置文件
-#              DeepSeek · 每日综合情报简报版
+#                  AI 应用落地情报版
 #
-# 适用方向：
-#   - AI / 大模型 / Agent
-#   - AI Security / Agent Security
-#   - 网络安全 / 威胁情报
-#   - 国家政策 / 数字政府
-#   - 宏观经济 / 民生
+# 核心关注：
+#   AI应用案例 > Agent创意 > 业务落地 > 实际成效
+#   > 工程实践 > AI产品能力 > 政策 > 少量安全/前沿技术
 #
 # Version: 2.4.0
 # ═══════════════════════════════════════════════════════════════
@@ -26,10 +23,8 @@ app:
 # 1.5 调度系统
 #
 # office_hours：
-#   工作日按“到岗 / 午间 / 收工”节奏运行
-#   更适合作为工作情报简报
-#
-# 具体时间由 config/timeline.yaml 控制
+# 工作日到岗 / 午间 / 收工三个时间段
+# 具体时间在 config/timeline.yaml 中配置
 # ===============================================================
 schedule:
   enabled: true
@@ -37,25 +32,20 @@ schedule:
 
 
 # ===============================================================
-# 2. 数据源 - 热榜平台
+# 2. 热榜平台
 #
-# 热榜主要用于：
-#   - 国家 / 社会热点
-#   - 宏观经济
-#   - 民生
-#   - 舆情感知
-#
-# 专业 AI / 网络安全资讯主要依靠 RSS
+# 热榜不是核心技术源。
+# 主要用于补充：
+#   - 国家政策
+#   - 社会热点
+#   - 经济民生
+#   - 中国科技产业动态
 # ===============================================================
 platforms:
   enabled: true
   api_url: ""
 
   sources:
-
-    # -----------------------------------------------------------
-    # 综合新闻 / 政策 / 民生
-    # -----------------------------------------------------------
 
     - id: "toutiao"
       name: "今日头条"
@@ -77,11 +67,6 @@ platforms:
       name: "微博"
       expected_domain: "weibo.com"
 
-
-    # -----------------------------------------------------------
-    # 宏观经济 / 金融
-    # -----------------------------------------------------------
-
     - id: "wallstreetcn-hot"
       name: "华尔街见闻"
       expected_domain: "wallstreetcn.com"
@@ -90,18 +75,23 @@ platforms:
       name: "财联社热门"
       expected_domain: "cls.cn"
 
-
-    # -----------------------------------------------------------
-    # 技术 / 社区观点
-    # -----------------------------------------------------------
-
     - id: "zhihu"
       name: "知乎"
       expected_domain: "zhihu.com"
 
 
 # ===============================================================
-# 3. 数据源 - RSS
+# 3. RSS 数据源
+#
+# 设计原则：
+#
+# AI应用/企业案例      高优先级
+# Agent工程实践        高优先级
+# AI产品能力           高优先级
+# 国家政策             中高优先级
+# 网络安全             少量精选
+# 论文                 默认关闭
+#
 # ===============================================================
 rss:
   enabled: true
@@ -114,9 +104,6 @@ rss:
 
     # ===========================================================
     # 01 国家政策 / 政务
-    #
-    # 当前使用公共 RSSHub
-    # 后续建议自建 RSSHub 后替换 rsshub.app
     # ===========================================================
 
     - id: "gov-policy-latest"
@@ -166,7 +153,10 @@ rss:
 
 
     # ===========================================================
-    # 02 AI / 大模型 / Agent 官方源
+    # 02 AI / Agent 官方能力与产品
+    #
+    # 关注重点：
+    # 新能力能不能带来新的应用方式
     # ===========================================================
 
     - id: "openai-news"
@@ -174,9 +164,14 @@ rss:
       url: "https://openai.com/news/rss.xml"
       max_age_days: 3
 
-    - id: "deepmind"
-      name: "AI｜Google DeepMind"
-      url: "https://deepmind.google/blog/rss.xml"
+    - id: "anthropic-engineering"
+      name: "Agent｜Anthropic Engineering"
+      url: "https://raw.githubusercontent.com/Olshansk/rss-feeds/refs/heads/main/feeds/feed_anthropic_engineering.xml"
+      max_age_days: 5
+
+    - id: "anthropic-news"
+      name: "AI｜Anthropic News"
+      url: "https://raw.githubusercontent.com/Olshansk/rss-feeds/refs/heads/main/feeds/feed_anthropic_news.xml"
       max_age_days: 3
 
     - id: "google-ai"
@@ -184,95 +179,55 @@ rss:
       url: "https://blog.google/innovation-and-ai/technology/ai/rss/"
       max_age_days: 3
 
-    - id: "google-research"
-      name: "AI｜Google Research"
-      url: "https://research.google/blog/rss/"
-      max_age_days: 3
+    - id: "deepmind"
+      name: "AI｜Google DeepMind"
+      url: "https://deepmind.google/blog/rss.xml"
+      max_age_days: 5
 
     - id: "huggingface"
       name: "AI｜Hugging Face"
       url: "https://huggingface.co/blog/feed.xml"
-      max_age_days: 3
-
-    - id: "anthropic-engineering"
-      name: "AI｜Anthropic Engineering"
-      url: "https://raw.githubusercontent.com/Olshansk/rss-feeds/refs/heads/main/feeds/feed_anthropic_engineering.xml"
-      max_age_days: 3
-
-    - id: "anthropic-news"
-      name: "AI｜Anthropic News"
-      url: "https://raw.githubusercontent.com/Olshansk/rss-feeds/refs/heads/main/feeds/feed_anthropic_news.xml"
-      max_age_days: 3
+      max_age_days: 5
 
 
     # ===========================================================
-    # 03 AI / Agent / 网络安全论文
+    # 03 AI 应用 / 企业落地 / Agent 工程案例
+    #
+    # 这是当前最重要的一组来源
     # ===========================================================
 
-    - id: "arxiv-ai"
-      name: "论文｜arXiv cs.AI"
-      url: "https://export.arxiv.org/rss/cs.AI"
-      max_age_days: 2
+    - id: "aws-ai-ml"
+      name: "应用案例｜AWS AI & Machine Learning"
+      url: "https://aws.amazon.com/blogs/machine-learning/feed/"
+      max_age_days: 5
 
-    - id: "arxiv-cl"
-      name: "论文｜arXiv cs.CL"
-      url: "https://export.arxiv.org/rss/cs.CL"
-      max_age_days: 2
-
-    - id: "arxiv-security"
-      name: "论文｜arXiv cs.CR"
-      url: "https://export.arxiv.org/rss/cs.CR"
-      max_age_days: 2
+    - id: "google-cloud"
+      name: "应用案例｜Google Cloud"
+      url: "https://cloudblog.withgoogle.com/rss/"
+      max_age_days: 5
 
 
     # ===========================================================
-    # 04 网络安全 / 威胁情报
+    # 04 网络安全中的 AI / 少量重要安全情报
+    #
+    # 不追求覆盖全部 CVE。
+    # 只保留真实威胁、AI安全、安全运营和可借鉴案例。
     # ===========================================================
 
     - id: "google-threat-intelligence"
       name: "安全｜Google Threat Intelligence / Mandiant"
       url: "https://feeds.feedburner.com/threatintelligence/pvexyqv7v0v"
-      max_age_days: 3
-
-    - id: "unit42"
-      name: "安全｜Palo Alto Unit 42"
-      url: "https://unit42.paloaltonetworks.com/feed/"
-      max_age_days: 3
+      max_age_days: 5
 
     - id: "microsoft-security"
       name: "安全｜Microsoft Security"
       url: "https://www.microsoft.com/en-us/security/blog/feed/"
-      max_age_days: 3
+      max_age_days: 5
 
-    - id: "google-project-zero"
-      name: "安全｜Google Project Zero"
-      url: "https://googleprojectzero.blogspot.com/feeds/posts/default"
-      max_age_days: 7
-
-    - id: "google-security"
-      name: "安全｜Google Security Blog"
-      url: "https://googleonlinesecurity.blogspot.com/atom.xml"
-      max_age_days: 3
-
-    - id: "portswigger-research"
-      name: "安全｜PortSwigger Research"
-      url: "https://portswigger.net/research/rss"
-      max_age_days: 7
-
-    - id: "cloudflare-security"
-      name: "安全｜Cloudflare"
-      url: "https://blog.cloudflare.com/rss"
-      max_age_days: 3
-
-    - id: "krebsonsecurity"
-      name: "安全｜Krebs on Security"
-      url: "https://krebsonsecurity.com/feed/"
-      max_age_days: 3
-
-
-    # ===========================================================
-    # 05 AI Security / Agent Security
-    # ===========================================================
+    - id: "unit42"
+      name: "安全｜Palo Alto Unit 42"
+      url: "https://unit42.paloaltonetworks.com/feed/"
+      max_age_days: 5
 
     - id: "owasp-genai"
       name: "AI安全｜OWASP GenAI Security"
@@ -281,7 +236,12 @@ rss:
 
 
     # ===========================================================
-    # 06 国际技术社区
+    # 05 技术社区 / 创意发现
+    #
+    # 用于发现：
+    #   新 Agent 项目
+    #   新应用创意
+    #   新型 AI 工具
     # ===========================================================
 
     - id: "hacker-news"
@@ -291,9 +251,41 @@ rss:
 
 
     # ===========================================================
-    # GitHub Trending
+    # 06 论文
     #
-    # 自建 RSSHub 并配置 GitHub Token 后建议开启
+    # 默认关闭。
+    #
+    # 当前目标不是追踪底层研究，
+    # 而是发现 AI 应用和 Agent 创意。
+    #
+    # 如果后续希望增加前沿探索，可手动开启 cs.AI。
+    # ===========================================================
+
+    - id: "arxiv-ai"
+      name: "论文｜arXiv cs.AI"
+      url: "https://export.arxiv.org/rss/cs.AI"
+      enabled: false
+      max_age_days: 2
+
+    - id: "arxiv-cl"
+      name: "论文｜arXiv cs.CL"
+      url: "https://export.arxiv.org/rss/cs.CL"
+      enabled: false
+      max_age_days: 2
+
+    - id: "arxiv-security"
+      name: "论文｜arXiv cs.CR"
+      url: "https://export.arxiv.org/rss/cs.CR"
+      enabled: false
+      max_age_days: 2
+
+
+    # ===========================================================
+    # 07 GitHub Trending
+    #
+    # 自建 RSSHub 并配置 GitHub Token 后建议开启。
+    #
+    # 对发现 Agent 创意和新项目价值很高。
     # ===========================================================
 
     # - id: "github-trending"
@@ -304,58 +296,55 @@ rss:
 
 # ===============================================================
 # 4. 报告模式
-#
-# 开启 schedule 后，具体模式可被 timeline.yaml 覆盖
 # ===============================================================
 report:
+
+  # 开启 schedule 后会被 timeline.yaml 对应时段覆盖
   mode: "current"
 
-  # 按兴趣标签分类，而不是按来源分类
+  # 按 AI 兴趣标签分类
   display_mode: "keyword"
 
-  # 按 ai_interests.txt 中定义的兴趣优先级展示
+  # 按 ai_interests.txt 中的兴趣优先级排列
   sort_by_position_first: true
 
   rank_threshold: 5
 
-  # 单个兴趣分类最多展示 8 条
-  # 防止某一个领域占满整个简报
-  max_news_per_keyword: 8
+  # 每个分类最多展示 6 条
+  #
+  # 对你的需求来说，比 8 条更舒服：
+  # 目标是发现案例，不是阅读新闻瀑布流
+  max_news_per_keyword: 6
 
 
 # ===============================================================
-# 4.5 筛选策略
-#
-# 使用 DeepSeek 对资讯进行语义筛选
+# 4.5 AI 筛选
 # ===============================================================
 filter:
+
+  # 使用 DeepSeek 进行语义筛选
   method: "ai"
 
-  # 按 ai_interests.txt 中的定义顺序排列兴趣分类
+  # ai_interests.txt 上面的类别优先展示
   priority_sort_enabled: true
 
 
 # ===============================================================
-# 4.6 AI 智能筛选
+# 4.6 DeepSeek AI 筛选配置
 # ===============================================================
 ai_filter:
 
-  # 每批给 DeepSeek 150 条标题
-  # 兼顾 API 稳定性和 Token 利用率
+  # 150 条 / 批
+  # 减少重复 Prompt 开销，同时控制上下文大小
   batch_size: 150
 
   batch_interval: 2
 
-  # 低于 0.65 的资讯不进入最终推荐
-  #
-  # 0.6：召回较高
-  # 0.65：推荐
-  # 0.7：偏严格
-  # 0.8：容易漏掉潜在重要信息
+  # 应用创意有时候标题不明显，
+  # 因此不要设得过高。
   min_score: 0.65
 
-  # 兴趣变化不大时尽量复用已有分类
-  # 减少重复调用 DeepSeek
+  # 尽量复用历史分类结果
   reclassify_threshold: 0.75
 
   prompt_file: "prompt.txt"
@@ -366,15 +355,12 @@ ai_filter:
 # ===============================================================
 # 5. 展示配置
 #
-# 阅读逻辑：
+# 使用逻辑：
 #
-#   AI 今日研判
-#       ↓
-#   热点资讯
-#       ↓
-#   专业 RSS
+# ① 先读 AI 综合研判
+# ② 再看筛选后的热点
+# ③ 再看具体 RSS 原文
 #
-# 先看结论，再决定哪些文章值得深入阅读
 # ===============================================================
 display:
 
@@ -385,41 +371,39 @@ display:
 
   regions:
 
-    # 国内综合热点
     hotlist: true
 
-    # 避免与 hotlist / rss 重复
+    # 避免重复
     new_items: false
 
-    # AI / Agent / 安全 / 政策核心来源
+    # 保留原始文章入口
     rss: true
 
-    # 不直接展示未经筛选的完整平台内容
+    # 不展示未经 AI 筛选的整个来源
     standalone: false
 
-    # DeepSeek 生成的综合分析
     ai_analysis: true
 
 
-  # 当前关闭 standalone
   standalone:
+
     platforms: []
+
     rss_feeds: []
+
     max_items: 10
 
 
 # ===============================================================
 # 6. 推送通知
 #
-# 推荐顺序：
+# 推荐：
+#   飞书 / 企业微信 / Email
 #
-#   1. 飞书
-#   2. 企业微信
-#   3. Email
-#
-# Webhook / 密码不要提交到公开 GitHub 仓库
+# Webhook 和密码不要写进公开仓库。
 # ===============================================================
 notification:
+
   enabled: true
 
   channels:
@@ -464,14 +448,15 @@ notification:
 # ===============================================================
 # 7. 存储
 #
-# SQLite 建议长期保留
-# 后续可以用于：
+# 历史资讯建议长期保存。
 #
-#   - MCP 查询历史资讯
-#   - RAG
-#   - 趋势分析
-#   - 技术热点统计
-#   - 个性化兴趣学习
+# 后续可以逐渐形成：
+#
+# AI 应用案例库
+# Agent 创意库
+# 政务 AI 案例库
+# 网络安全 AI 案例库
+#
 # ===============================================================
 storage:
 
@@ -479,7 +464,7 @@ storage:
 
   formats:
 
-    # 主数据库，必须开启
+    # 主数据库
     sqlite: true
 
     txt: false
@@ -492,7 +477,7 @@ storage:
 
     data_dir: "output"
 
-    # 0 = 永久保留
+    # 永久保留
     retention_days: 0
 
 
@@ -515,58 +500,56 @@ storage:
 
 
 # ===============================================================
-# 8. AI 模型配置
+# 8. DeepSeek 模型配置
 #
+# ai_filter
 # ai_analysis
 # ai_translation
-# ai_filter
 #
-# 共用这一套模型
+# 当前共用一个模型。
 #
-# 推荐通过环境变量传 Key：
+# 推荐通过环境变量传入：
 #
-# AI_API_KEY=sk-xxxxxxxx
+# AI_API_KEY=sk-xxxxx
+# AI_MODEL=deepseek/deepseek-v4-flash
 #
-# 不要把 Key 直接提交到 GitHub
 # ===============================================================
 ai:
 
-  # DeepSeek V4 Flash
-  # 足够处理：
-  #
-  #   - 新闻分类
-  #   - 相关性评分
-  #   - 标题翻译
-  #   - 日报总结
-  #
   model: "deepseek/deepseek-v4-flash"
 
-  # 推荐留空，通过 AI_API_KEY 环境变量设置
+  # 推荐通过 AI_API_KEY 环境变量设置
   api_key: ""
 
-  # 使用 DeepSeek 官方 API 时留空
+  # DeepSeek 官方 API 时留空
   api_base: ""
 
-  # RSS + AI Analysis 数据较多
   timeout: 180
 
-  # DeepSeek 推荐保持 1.0
   temperature: 1.0
 
-  # 日报最大生成长度
+  # 日报不需要特别长
   max_tokens: 5000
 
-  # API 网络异常自动重试
   num_retries: 2
 
-  # 第一阶段不配置备用模型
   fallback_models: []
 
 
 # ===============================================================
-# 9. AI 分析
+# 9. AI 综合分析
 #
-# DeepSeek 根据筛选后的资讯生成综合情报研判
+# 这一部分不是简单“总结新闻”。
+#
+# 后续 ai_analysis_prompt.txt 应重点输出：
+#
+#   今日值得关注
+#   AI 应用案例
+#   Agent 创意
+#   落地效果
+#   可以借鉴什么
+#   哪些值得进一步研究
+#
 # ===============================================================
 ai_analysis:
 
@@ -576,38 +559,38 @@ ai_analysis:
 
   prompt_file: "ai_analysis_prompt.txt"
 
-  # 跟随 timeline 中不同时间段：
-  #
-  # 上午 → 当前重要资讯
-  # 下班前 → 当日完整总结
-  #
+  # 跟随 timeline：
+  # 上午 current
+  # 下班前 daily
   mode: "follow_report"
 
-  # 最多给 DeepSeek 80 条新闻做综合分析
+  # 从原来 80 降到 60
   #
-  # 防止 token 使用量过大
-  max_news_for_analysis: 80
+  # AI Filter 已经进行了第一轮筛选，
+  # 不需要把太多内容再次送给模型。
+  max_news_for_analysis: 60
 
-  # 非常重要：
-  #
-  # 将 OpenAI / Anthropic / arXiv / Mandiant /
-  # Unit42 / 政府政策等 RSS 纳入 AI 分析
+  # AI应用案例主要来自 RSS，必须开启
   include_rss: true
 
-  # 当前不使用 standalone
   include_standalone: false
 
-  # 不把热榜完整排名变化轨迹交给 DeepSeek
-  #
-  # 对技术情报价值有限
-  # 关闭可明显节约 token
+  # 不分析热榜排名轨迹
   include_rank_timeline: false
 
 
 # ===============================================================
 # 10. AI 翻译
 #
-# 主要针对英文技术 RSS
+# 主要翻译：
+#
+# OpenAI
+# Anthropic
+# AWS
+# Google Cloud
+# Mandiant
+# Microsoft Security
+#
 # ===============================================================
 ai_translation:
 
@@ -623,10 +606,10 @@ ai_translation:
 
   scope:
 
-    # 国内热榜已经基本为中文
+    # 国内热榜已经是中文
     hotlist: false
 
-    # OpenAI / Anthropic / Mandiant / arXiv 等需要翻译
+    # 英文 RSS 翻译
     rss: true
 
     standalone: false
@@ -652,7 +635,7 @@ advanced:
 
 
   # -------------------------------------------------------------
-  # 热榜抓取
+  # 热榜爬虫
   # -------------------------------------------------------------
 
   crawler:
@@ -665,15 +648,14 @@ advanced:
 
 
   # -------------------------------------------------------------
-  # RSS 抓取
+  # RSS
   # -------------------------------------------------------------
 
   rss:
 
-    # 数据源较多，不建议请求太密
     request_interval: 1200
 
-    # 国外 RSS / 公共 RSSHub 偶尔响应较慢
+    # 公共 RSSHub / 国外网站适当放宽超时
     timeout: 30
 
     use_proxy: false
@@ -695,7 +677,7 @@ advanced:
 
 
   # -------------------------------------------------------------
-  # 推送
+  # 推送限制
   # -------------------------------------------------------------
 
   max_accounts_per_channel: 3
