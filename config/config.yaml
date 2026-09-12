@@ -1,10 +1,16 @@
 # ═══════════════════════════════════════════════════════════════
 #                    TrendRadar 配置文件
-#                  AI 应用落地情报版
+#              AI应用 / Agent落地 每日情报版
 #
-# 核心关注：
-#   AI应用案例 > Agent创意 > 业务落地 > 实际成效
-#   > 工程实践 > AI产品能力 > 政策 > 少量安全/前沿技术
+# 使用方式：
+#   GitHub Actions 每天固定执行一次
+#   TrendRadar 内部调度关闭
+#   DeepSeek 负责 AI 筛选、翻译和分析
+#
+# 数据持久化：
+#   TrendRadar 使用 local SQLite
+#   GitHub Actions 通过 WebDAV/rclone
+#   将 output/ 与 InfiniCLOUD 同步
 #
 # Version: 2.4.0
 # ═══════════════════════════════════════════════════════════════
@@ -21,24 +27,30 @@ app:
 # ===============================================================
 # 1.5 调度系统
 #
-# office_hours：
-# 工作日到岗 / 午间 / 收工三个时间段
-# 具体时间在 config/timeline.yaml 中配置
+# 关闭 TrendRadar 内部时间窗口。
+#
+# 原因：
+# 1. 不再使用 office_hours
+# 2. 避免出现“当前时间段不执行推送”
+# 3. 由 GitHub Actions cron 决定每天什么时候运行
+#
+# 注意：
+# 如果 GitHub Actions 一天执行多次，
+# 关闭调度后每次运行都可能分析并推送。
+# 因此 workflow 应改成每天执行一次。
 # ===============================================================
 schedule:
-  enabled: true
-  preset: "office_hours"
+  enabled: false
+  preset: "morning_evening"
 
 
 # ===============================================================
 # 2. 热榜平台
 #
-# 热榜不是核心技术源。
-# 主要用于补充：
-#   - 国家政策
-#   - 社会热点
-#   - 经济民生
-#   - 中国科技产业动态
+# 热榜用于补充：
+# 国家政策 / 科技产业 / 经济民生 / 社会重要事件
+#
+# AI应用情报的主要来源仍然是 RSS。
 # ===============================================================
 platforms:
   enabled: true
@@ -80,184 +92,196 @@ platforms:
 
 
 # ===============================================================
-# 3. RSS 数据源
+# 3. RSS
 #
-# 设计原则：
+# 原则：
+# AI应用案例 > Agent工程 > 产品能力 > 政策
+# > 少量安全 > 论文
 #
-# AI应用/企业案例      高优先级
-# Agent工程实践        高优先级
-# AI产品能力           高优先级
-# 国家政策             中高优先级
-# 网络安全             少量精选
-# 论文                 默认关闭
-#
+# rsshub.app 政策源暂时关闭：
+# GitHub Actions 出口请求公共 RSSHub 当前返回 403。
+# 后续换成自建 RSSHub 后再开启。
 # ===============================================================
 rss:
   enabled: true
 
   freshness_filter:
     enabled: true
-    max_age_days: 2
+    max_age_days: 3
 
   feeds:
 
     # ===========================================================
     # 01 国家政策 / 政务
+    #
+    # 当前公共 rsshub.app 在 GitHub Actions 中返回 403，
+    # 暂时关闭，避免每次运行产生大量失败日志。
+    #
+    # 自建 RSSHub 后将 enabled 改为 true，
+    # 并把 rsshub.app 换成自己的域名。
     # ===========================================================
 
     - id: "gov-policy-latest"
       name: "政策｜中国政府网-最新政策"
       url: "https://rsshub.app/gov/zhengce/zuixin"
+      enabled: false
       max_age_days: 3
 
     - id: "gov-department-news"
       name: "政策｜中国政府网-部门政务"
       url: "https://rsshub.app/gov/news/bm"
-      max_age_days: 2
+      enabled: false
+      max_age_days: 3
 
     - id: "gov-policy-files"
       name: "政策｜国务院政策文件"
       url: "https://rsshub.app/gov/zhengce/wenjian"
+      enabled: false
       max_age_days: 7
 
     - id: "miit-policy"
       name: "政策｜工信部-政策文件"
       url: "https://rsshub.app/gov/miit/zcwj"
+      enabled: false
       max_age_days: 7
 
     - id: "miit-policy-explain"
       name: "政策｜工信部-政策解读"
       url: "https://rsshub.app/gov/miit/zcjd"
+      enabled: false
       max_age_days: 7
 
     - id: "miit-consultation"
       name: "政策｜工信部-意见征集"
       url: "https://rsshub.app/gov/miit/yjzj"
+      enabled: false
       max_age_days: 7
 
     - id: "npc-authoritative"
       name: "政策｜全国人大-权威发布"
       url: "https://rsshub.app/gov/npc/c12435"
+      enabled: false
       max_age_days: 7
 
     - id: "npc-legislation"
       name: "政策｜全国人大-立法"
       url: "https://rsshub.app/gov/npc/c183"
+      enabled: false
       max_age_days: 7
 
     - id: "moj-legislation"
       name: "政策｜司法部-立法意见征集"
       url: "https://rsshub.app/gov/moj/lfyjzj"
+      enabled: false
       max_age_days: 7
 
 
     # ===========================================================
-    # 02 AI / Agent 官方能力与产品
-    #
-    # 关注重点：
-    # 新能力能不能带来新的应用方式
+    # 02 AI / Agent 官方能力
     # ===========================================================
 
     - id: "openai-news"
       name: "AI｜OpenAI"
       url: "https://openai.com/news/rss.xml"
-      max_age_days: 3
+      enabled: true
+      max_age_days: 5
 
     - id: "anthropic-engineering"
       name: "Agent｜Anthropic Engineering"
       url: "https://raw.githubusercontent.com/Olshansk/rss-feeds/refs/heads/main/feeds/feed_anthropic_engineering.xml"
+      enabled: true
       max_age_days: 5
 
     - id: "anthropic-news"
       name: "AI｜Anthropic News"
       url: "https://raw.githubusercontent.com/Olshansk/rss-feeds/refs/heads/main/feeds/feed_anthropic_news.xml"
-      max_age_days: 3
+      enabled: true
+      max_age_days: 5
 
     - id: "google-ai"
       name: "AI｜Google AI"
       url: "https://blog.google/innovation-and-ai/technology/ai/rss/"
-      max_age_days: 3
+      enabled: true
+      max_age_days: 5
 
     - id: "deepmind"
       name: "AI｜Google DeepMind"
       url: "https://deepmind.google/blog/rss.xml"
+      enabled: true
       max_age_days: 5
 
     - id: "huggingface"
       name: "AI｜Hugging Face"
       url: "https://huggingface.co/blog/feed.xml"
+      enabled: true
       max_age_days: 5
 
 
     # ===========================================================
-    # 03 AI 应用 / 企业落地 / Agent 工程案例
-    #
-    # 这是当前最重要的一组来源
+    # 03 AI应用 / 企业落地 / Agent生产案例
     # ===========================================================
 
     - id: "aws-ai-ml"
       name: "应用案例｜AWS AI & Machine Learning"
       url: "https://aws.amazon.com/blogs/machine-learning/feed/"
+      enabled: true
       max_age_days: 5
 
     - id: "google-cloud"
       name: "应用案例｜Google Cloud"
       url: "https://cloudblog.withgoogle.com/rss/"
+      enabled: true
       max_age_days: 5
 
 
     # ===========================================================
-    # 04 网络安全中的 AI / 少量重要安全情报
+    # 04 网络安全 / AI安全
     #
-    # 不追求覆盖全部 CVE。
-    # 只保留真实威胁、AI安全、安全运营和可借鉴案例。
+    # 只保留少量高质量来源。
     # ===========================================================
 
     - id: "google-threat-intelligence"
       name: "安全｜Google Threat Intelligence / Mandiant"
       url: "https://feeds.feedburner.com/threatintelligence/pvexyqv7v0v"
-      max_age_days: 5
-
-    - id: "microsoft-security"
-      name: "安全｜Microsoft Security"
-      url: "https://www.microsoft.com/en-us/security/blog/feed/"
+      enabled: true
       max_age_days: 5
 
     - id: "unit42"
       name: "安全｜Palo Alto Unit 42"
       url: "https://unit42.paloaltonetworks.com/feed/"
+      enabled: true
       max_age_days: 5
 
     - id: "owasp-genai"
       name: "AI安全｜OWASP GenAI Security"
       url: "https://genai.owasp.org/feed/"
+      enabled: true
       max_age_days: 7
+
+    # 你之前运行时该 Feed 出现解析异常：
+    # 'str' object has no attribute 'get'
+    - id: "microsoft-security"
+      name: "安全｜Microsoft Security"
+      url: "https://www.microsoft.com/en-us/security/blog/feed/"
+      enabled: false
+      max_age_days: 5
 
 
     # ===========================================================
-    # 05 技术社区 / 创意发现
-    #
-    # 用于发现：
-    #   新 Agent 项目
-    #   新应用创意
-    #   新型 AI 工具
+    # 05 技术社区 / Agent创意发现
     # ===========================================================
 
     - id: "hacker-news"
       name: "技术社区｜Hacker News"
       url: "https://hnrss.org/frontpage"
+      enabled: true
       max_age_days: 2
 
 
     # ===========================================================
     # 06 论文
     #
-    # 默认关闭。
-    #
-    # 当前目标不是追踪底层研究，
-    # 而是发现 AI 应用和 Agent 创意。
-    #
-    # 如果后续希望增加前沿探索，可手动开启 cs.AI。
+    # 当前以应用落地为主，暂时全部关闭。
     # ===========================================================
 
     - id: "arxiv-ai"
@@ -279,87 +303,67 @@ rss:
       max_age_days: 2
 
 
-    # ===========================================================
-    # 07 GitHub Trending
-    #
-    # 自建 RSSHub 并配置 GitHub Token 后建议开启。
-    #
-    # 对发现 Agent 创意和新项目价值很高。
-    # ===========================================================
-
-    # - id: "github-trending"
-    #   name: "技术社区｜GitHub Trending"
-    #   url: "http://rsshub:1200/github/trending/daily/any"
-    #   max_age_days: 2
-
-
 # ===============================================================
 # 4. 报告模式
+#
+# GitHub Actions 每日仅执行一次，
+# 因此使用 daily 更符合“每日情报简报”。
 # ===============================================================
 report:
+  mode: "daily"
 
-  # 开启 schedule 后会被 timeline.yaml 对应时段覆盖
-  mode: "current"
-
-  # 按 AI 兴趣标签分类
   display_mode: "keyword"
 
-  # 按 ai_interests.txt 中的兴趣优先级排列
+  # 按 ai_interests.txt 的优先级显示
   sort_by_position_first: true
 
   rank_threshold: 5
 
-  # 每个分类最多展示 6 条
-  #
-  # 对你的需求来说，比 8 条更舒服：
-  # 目标是发现案例，不是阅读新闻瀑布流
+  # 每个分类最多显示 6 条
   max_news_per_keyword: 6
 
 
 # ===============================================================
-# 4.5 AI 筛选
+# 4.5 AI筛选
 # ===============================================================
 filter:
-
-  # 使用 DeepSeek 进行语义筛选
   method: "ai"
 
-  # ai_interests.txt 上面的类别优先展示
   priority_sort_enabled: true
 
 
 # ===============================================================
-# 4.6 DeepSeek AI 筛选配置
+# 4.6 DeepSeek AI筛选
 # ===============================================================
 ai_filter:
 
-  # 150 条 / 批
-  # 减少重复 Prompt 开销，同时控制上下文大小
   batch_size: 150
 
   batch_interval: 2
 
-  # 应用创意有时候标题不明显，
-  # 因此不要设得过高。
+  # 保持较高召回率。
+  # Agent应用案例的标题不一定包含明显技术关键词。
   min_score: 0.65
 
-  # 尽量复用历史分类结果
   reclassify_threshold: 0.75
 
   prompt_file: "prompt.txt"
+
   extract_prompt_file: "extract_prompt.txt"
+
   update_tags_prompt_file: "update_tags_prompt.txt"
 
 
 # ===============================================================
-# 5. 展示配置
+# 5. 展示
 #
-# 使用逻辑：
+# 阅读顺序：
 #
-# ① 先读 AI 综合研判
-# ② 再看筛选后的热点
-# ③ 再看具体 RSS 原文
-#
+# AI日报结论
+# ↓
+# 热榜补充
+# ↓
+# 专业RSS原文
 # ===============================================================
 display:
 
@@ -372,13 +376,10 @@ display:
 
     hotlist: true
 
-    # 避免重复
     new_items: false
 
-    # 保留原始文章入口
     rss: true
 
-    # 不展示未经 AI 筛选的整个来源
     standalone: false
 
     ai_analysis: true
@@ -394,15 +395,9 @@ display:
 
 
 # ===============================================================
-# 6. 推送通知
-#
-# 推荐：
-#   飞书 / 企业微信 / Email
-#
-# Webhook 和密码不要写进公开仓库。
+# 6. 通知
 # ===============================================================
 notification:
-
   enabled: true
 
   channels:
@@ -421,6 +416,7 @@ notification:
       bot_token: ""
       chat_id: ""
 
+    # 邮件建议继续通过 GitHub Secrets / 环境变量配置
     email:
       from: ""
       password: ""
@@ -447,28 +443,31 @@ notification:
 # ===============================================================
 # 7. 存储
 #
-# 历史资讯建议长期保存。
+# 非常重要：
 #
-# 后续可以逐渐形成：
+# InfiniCLOUD 是 WebDAV，不是 S3。
 #
-# AI 应用案例库
-# Agent 创意库
-# 政务 AI 案例库
-# 网络安全 AI 案例库
+# 因此 TrendRadar 本身使用 local。
+# GitHub Actions 在执行前后通过 rclone/WebDAV：
 #
+#   InfiniCLOUD → output/
+#   output/ → InfiniCLOUD
+#
+# 不要把 backend 设置成 remote，
+# 否则 TrendRadar 会要求 S3 参数。
 # ===============================================================
 storage:
 
-  backend: "auto"
+  backend: "local"
 
   formats:
 
-    # 主数据库
+    # SQLite 是主状态存储
     sqlite: true
 
     txt: false
 
-    # 保留网页报告
+    # 邮件和网页简报需要 HTML
     html: true
 
 
@@ -476,58 +475,50 @@ storage:
 
     data_dir: "output"
 
-    # 永久保留
     retention_days: 0
 
 
+  # 不使用 TrendRadar 自带 S3 remote
   remote:
 
     retention_days: 0
 
     endpoint_url: ""
+
     bucket_name: ""
+
     access_key_id: ""
+
     secret_access_key: ""
+
     region: ""
 
 
   pull:
 
+    # WebDAV 同步不走 TrendRadar pull
     enabled: false
 
     days: 7
 
 
 # ===============================================================
-# 8. DeepSeek 模型配置
-#
-# ai_filter
-# ai_analysis
-# ai_translation
-#
-# 当前共用一个模型。
-#
-# 推荐通过环境变量传入：
-#
-# AI_API_KEY=sk-xxxxx
-# AI_MODEL=deepseek/deepseek-v4-flash
-#
+# 8. DeepSeek
 # ===============================================================
 ai:
 
   model: "deepseek/deepseek-v4-flash"
 
-  # 推荐通过 AI_API_KEY 环境变量设置
+  # 推荐环境变量 AI_API_KEY
   api_key: ""
 
-  # DeepSeek 官方 API 时留空
+  # DeepSeek 官方API留空
   api_base: ""
 
   timeout: 180
 
   temperature: 1.0
 
-  # 日报不需要特别长
   max_tokens: 5000
 
   num_retries: 2
@@ -536,19 +527,9 @@ ai:
 
 
 # ===============================================================
-# 9. AI 综合分析
+# 9. AI分析
 #
-# 这一部分不是简单“总结新闻”。
-#
-# 后续 ai_analysis_prompt.txt 应重点输出：
-#
-#   今日值得关注
-#   AI 应用案例
-#   Agent 创意
-#   落地效果
-#   可以借鉴什么
-#   哪些值得进一步研究
-#
+# 生成每日“AI应用与Agent落地情报简报”
 # ===============================================================
 ai_analysis:
 
@@ -558,38 +539,25 @@ ai_analysis:
 
   prompt_file: "ai_analysis_prompt.txt"
 
-  # 跟随 timeline：
-  # 上午 current
-  # 下班前 daily
+  # 因为 report.mode 已固定 daily，
+  # 跟随即可。
   mode: "follow_report"
 
-  # 从原来 80 降到 60
-  #
-  # AI Filter 已经进行了第一轮筛选，
-  # 不需要把太多内容再次送给模型。
+  # AI Filter 已做第一层过滤，
+  # 60 条足够做一次日报分析。
   max_news_for_analysis: 60
 
-  # AI应用案例主要来自 RSS，必须开启
+  # AI应用案例主要来自 RSS
   include_rss: true
 
   include_standalone: false
 
-  # 不分析热榜排名轨迹
+  # 不浪费 token 分析热榜排名轨迹
   include_rank_timeline: false
 
 
 # ===============================================================
-# 10. AI 翻译
-#
-# 主要翻译：
-#
-# OpenAI
-# Anthropic
-# AWS
-# Google Cloud
-# Mandiant
-# Microsoft Security
-#
+# 10. AI翻译
 # ===============================================================
 ai_translation:
 
@@ -605,10 +573,10 @@ ai_translation:
 
   scope:
 
-    # 国内热榜已经是中文
+    # 国内热榜无需翻译
     hotlist: false
 
-    # 英文 RSS 翻译
+    # 英文专业RSS需要翻译
     rss: true
 
     standalone: false
@@ -619,7 +587,9 @@ ai_translation:
 # ===============================================================
 advanced:
 
-  debug: false
+  # 标签提取问题排查期间先开启。
+  # 等 AI Filter 修好后可以改回 false。
+  debug: true
 
 
   # -------------------------------------------------------------
@@ -634,7 +604,7 @@ advanced:
 
 
   # -------------------------------------------------------------
-  # 热榜爬虫
+  # 热榜
   # -------------------------------------------------------------
 
   crawler:
@@ -654,7 +624,6 @@ advanced:
 
     request_interval: 1200
 
-    # 公共 RSSHub / 国外网站适当放宽超时
     timeout: 30
 
     use_proxy: false
@@ -675,11 +644,8 @@ advanced:
     hotness: 0.1
 
 
-  # -------------------------------------------------------------
-  # 推送限制
-  # -------------------------------------------------------------
-
   max_accounts_per_channel: 3
+
 
   batch_size:
 
@@ -692,6 +658,7 @@ advanced:
     bark: 4000
 
     slack: 4000
+
 
   batch_send_interval: 3
 
