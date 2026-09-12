@@ -1,0 +1,328 @@
+name: TrendRadar Daily Briefing
+
+on:
+  schedule:
+    # UTC 00:00 = 北京时间 08:00
+    - cron: "0 0 * * *"
+
+  # 允许手动运行测试
+  workflow_dispatch:
+
+concurrency:
+  group: trendradar-daily
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+
+      # =========================================================
+      # 1. 获取代码
+      # =========================================================
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+          clean: true
+
+
+      # =========================================================
+      # 2. Python / uv
+      # =========================================================
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+
+      - name: Install dependencies
+        run: uv sync --frozen --no-dev
+
+
+      # =========================================================
+      # 3. 安装 rclone
+      #
+      # InfiniCLOUD 本身使用 WebDAV，
+      # rclone 负责 WebDAV ↔ GitHub Actions
+      # =========================================================
+      - name: Install rclone
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y rclone
+
+          echo "rclone version:"
+          rclone version
+
+
+      # =========================================================
+      # 4. 配置 InfiniCLOUD
+      #
+      # 注意：
+      # 密码不会写入仓库。
+      # rclone.conf 只存在当前临时 Runner 中。
+      # =========================================================
+      - name: Configure InfiniCLOUD WebDAV
+        env:
+          INFINICLOUD_WEBDAV_URL: ${{ secrets.INFINICLOUD_WEBDAV_URL }}
+          INFINICLOUD_USER: ${{ secrets.INFINICLOUD_USER }}
+          INFINICLOUD_APP_PASSWORD: ${{ secrets.INFINICLOUD_APP_PASSWORD }}
+
+        run: |
+          set -euo pipefail
+
+          if [ -z "${INFINICLOUD_WEBDAV_URL}" ]; then
+            echo "ERROR: INFINICLOUD_WEBDAV_URL is empty"
+            exit 1
+          fi
+
+          if [ -z "${INFINICLOUD_USER}" ]; then
+            echo "ERROR: INFINICLOUD_USER is empty"
+            exit 1
+          fi
+
+          if [ -z "${INFINICLOUD_APP_PASSWORD}" ]; then
+            echo "ERROR: INFINICLOUD_APP_PASSWORD is empty"
+            exit 1
+          fi
+
+          mkdir -p ~/.config/rclone
+          chmod 700 ~/.config/rclone
+
+          # rclone 配置文件要求密码经过 obscure
+          OBSCURED_PASSWORD="$(rclone obscure "${INFINICLOUD_APP_PASSWORD}")"
+
+          umask 077
+
+          cat > ~/.config/rclone/rclone.conf <<EOF
+          [infinicloud]
+          type = webdav
+          url = ${INFINICLOUD_WEBDAV_URL}
+          vendor = other
+          user = ${INFINICLOUD_USER}
+          pass = ${OBSCURED_PASSWORD}
+          EOF
+
+          echo "Testing InfiniCLOUD connection..."
+
+          rclone lsd infinicloud: \
+            --timeout 30s \
+            --contimeout 15s
+
+          echo "InfiniCLOUD connection OK"
+
+
+      # =========================================================
+      # 5. 创建 TrendRadar 远程目录
+      # =========================================================
+      - name: Prepare InfiniCLOUD directory
+        run: |
+          rclone mkdir infinicloud:TrendRadar
+
+
+      # =========================================================
+      # 6. 恢复历史状态
+      #
+      # InfiniCLOUD:
+      #   TrendRadar/state.tar.gz
+      #
+      #             ↓
+      #
+      # GitHub Runner:
+      #   output/
+      #
+      # 第一次运行不存在 state.tar.gz 属于正常情况。
+      # =========================================================
+      - name: Restore TrendRadar state
+        run: |
+          set -euo pipefail
+
+          mkdir -p output
+
+          if rclone lsf infinicloud:TrendRadar \
+            --files-only \
+            | grep -Fxq "state.tar.gz"; then
+
+            echo "Existing TrendRadar state found."
+
+            rclone copyto \
+              infinicloud:TrendRadar/state.tar.gz \
+              /tmp/trendradar-state.tar.gz \
+              --retries 3 \
+              --low-level-retries 10
+
+            echo "Extracting previous state..."
+
+            tar -xzf /tmp/trendradar-state.tar.gz
+
+            echo "State restored."
+
+            echo "Existing database files:"
+            find output -type f -name "*.db" | sort | tail -20 || true
+
+          else
+            echo "No existing TrendRadar state."
+            echo "This appears to be the first run."
+          fi
+
+
+      # =========================================================
+      # 7. 验证配置
+      # =========================================================
+      - name: Verify configuration
+        run: |
+          test -f config/config.yaml
+          test -f config/ai_interests.txt
+          test -f config/ai_analysis_prompt.txt
+
+          echo "Configuration files OK"
+
+
+      # =========================================================
+      # 8. 运行 TrendRadar
+      # =========================================================
+      - name: Run TrendRadar
+        env:
+
+          # -----------------------------------------------------
+          # Email
+          # -----------------------------------------------------
+
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_SMTP_SERVER: ${{ secrets.EMAIL_SMTP_SERVER }}
+          EMAIL_SMTP_PORT: ${{ secrets.EMAIL_SMTP_PORT }}
+
+
+          # -----------------------------------------------------
+          # DeepSeek
+          # -----------------------------------------------------
+
+          AI_API_KEY: ${{ secrets.AI_API_KEY }}
+
+          # 推荐：
+          # deepseek/deepseek-v4-flash
+          AI_MODEL: ${{ secrets.AI_MODEL }}
+
+          AI_API_BASE: ${{ secrets.AI_API_BASE }}
+
+
+          # -----------------------------------------------------
+          # 其他通知渠道（可选）
+          # -----------------------------------------------------
+
+          FEISHU_WEBHOOK_URL: ${{ secrets.FEISHU_WEBHOOK_URL }}
+
+          DINGTALK_WEBHOOK_URL: ${{ secrets.DINGTALK_WEBHOOK_URL }}
+
+          WEWORK_WEBHOOK_URL: ${{ secrets.WEWORK_WEBHOOK_URL }}
+
+          WEWORK_MSG_TYPE: ${{ secrets.WEWORK_MSG_TYPE }}
+
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+
+          NTFY_SERVER_URL: ${{ secrets.NTFY_SERVER_URL }}
+
+          NTFY_TOKEN: ${{ secrets.NTFY_TOKEN }}
+
+          BARK_URL: ${{ secrets.BARK_URL }}
+
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+
+          # -----------------------------------------------------
+          # GitHub Actions 环境标记
+          # -----------------------------------------------------
+
+          GITHUB_ACTIONS: "true"
+
+        run: |
+          uv run python -m trendradar
+
+
+      # =========================================================
+      # 9. 查看本次产生的数据
+      # =========================================================
+      - name: Show storage status
+        if: success()
+
+        run: |
+          echo "TrendRadar output size:"
+          du -sh output || true
+
+          echo ""
+
+          echo "SQLite databases:"
+          find output -type f -name "*.db" | sort || true
+
+          echo ""
+
+          echo "Latest reports:"
+          find output/html -type f 2>/dev/null | sort | tail -10 || true
+
+
+      # =========================================================
+      # 10. 打包状态
+      #
+      # 为什么不用直接 rclone sync output？
+      #
+      # 普通 WebDAV 对 mtime/hash 支持有限。
+      # 每天上传一个压缩包更稳，也显著减少 WebDAV 请求。
+      # =========================================================
+      - name: Package TrendRadar state
+        if: success()
+
+        run: |
+          set -euo pipefail
+
+          tar -czf /tmp/trendradar-state.tar.gz output
+
+          echo "State archive:"
+          ls -lh /tmp/trendradar-state.tar.gz
+
+
+      # =========================================================
+      # 11. 上传到 InfiniCLOUD
+      #
+      # copyto 成功完成后才覆盖之前的 state.tar.gz
+      # =========================================================
+      - name: Backup state to InfiniCLOUD
+        if: success()
+
+        run: |
+          set -euo pipefail
+
+          echo "Uploading state to InfiniCLOUD..."
+
+          rclone copyto \
+            /tmp/trendradar-state.tar.gz \
+            infinicloud:TrendRadar/state.tar.gz \
+            --retries 3 \
+            --low-level-retries 10 \
+            --timeout 2m
+
+          echo "Backup completed."
+
+
+      # =========================================================
+      # 12. 验证远程备份
+      # =========================================================
+      - name: Verify InfiniCLOUD backup
+        if: success()
+
+        run: |
+          echo "Remote files:"
+
+          rclone lsl infinicloud:TrendRadar
