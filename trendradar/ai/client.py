@@ -45,19 +45,20 @@ class AIClient:
         **kwargs
     ) -> str:
         """
-        调用 AI 模型进行对话
-
-        Args:
-            messages: 消息列表，格式: [{"role": "system/user/assistant", "content": "..."}]
-            **kwargs: 额外参数，会覆盖默认配置
-
-        Returns:
-            str: AI 响应内容
-
-        Raises:
-            Exception: API 调用失败时抛出异常
+        调用 AI 模型进行对话。
+    
+        DeepSeek V4 兼容：
+        1. 默认关闭 thinking，避免 reasoning 消耗 max_tokens 后 content 为空
+        2. HTTP 200 但 content 为空时主动重试
+        3. 支持 response_format 等额外参数
         """
-        # 构建请求参数
+    
+        import time
+    
+        # 空响应单独重试。
+        # LiteLLM num_retries 主要处理异常，不处理 HTTP 200 + content=""。
+        empty_response_retries = kwargs.pop("empty_response_retries", 2)
+    
         params = {
             "model": self.model,
             "messages": messages,
@@ -65,41 +66,101 @@ class AIClient:
             "timeout": kwargs.get("timeout", self.timeout),
             "num_retries": kwargs.get("num_retries", self.num_retries),
         }
-
-        # 添加 API Key
+    
         if self.api_key:
             params["api_key"] = self.api_key
-
-        # 添加 API Base（如果配置了）
+    
         if self.api_base:
             params["api_base"] = self.api_base
-
-        # 添加 max_tokens（如果配置了且不为 0）
+    
         max_tokens = kwargs.get("max_tokens", self.max_tokens)
         if max_tokens and max_tokens > 0:
             params["max_tokens"] = max_tokens
-
-        # 添加 fallback 模型（如果配置了）
+    
         if self.fallback_models:
             params["fallbacks"] = self.fallback_models
-
-        # 合并其他额外参数
+    
+        # ==========================================================
+        # DeepSeek V4
+        #
+        # V4 默认开启 Thinking。
+        # TrendRadar 的分类、翻译、摘要属于结构化任务，
+        # 不需要长 reasoning。
+        #
+        # 显式关闭可以：
+        # - 减少 Token
+        # - 避免 reasoning_content 占满输出预算
+        # - 提高 JSON 输出稳定性
+        # ==========================================================
+        if (
+            self.model.startswith("deepseek/")
+            and "thinking" not in kwargs
+            and "reasoning_effort" not in kwargs
+        ):
+            params["thinking"] = {
+                "type": "disabled"
+            }
+    
+        # 合并额外参数
         for key, value in kwargs.items():
             if key not in params:
                 params[key] = value
-
-        # 调用 LiteLLM
-        response = completion(**params)
-
-        # 提取响应内容
-        # 某些模型/提供商返回 list（内容块）而非 str，统一转为 str
-        content = response.choices[0].message.content
-        if isinstance(content, list):
-            content = "\n".join(
-                item.get("text", str(item)) if isinstance(item, dict) else str(item)
-                for item in content
+    
+        last_finish_reason = None
+    
+        for attempt in range(empty_response_retries + 1):
+    
+            response = completion(**params)
+    
+            choice = response.choices[0]
+            message = choice.message
+    
+            content = message.content
+    
+            if isinstance(content, list):
+                content = "\n".join(
+                    item.get("text", str(item))
+                    if isinstance(item, dict)
+                    else str(item)
+                    for item in content
+                )
+    
+            if content and str(content).strip():
+                return str(content).strip()
+    
+            # ------------------------------------------------------
+            # HTTP 请求成功，但模型没有生成最终 content
+            # ------------------------------------------------------
+    
+            last_finish_reason = getattr(choice, "finish_reason", None)
+    
+            reasoning_content = getattr(
+                message,
+                "reasoning_content",
+                None
             )
-        return content or ""
+    
+            reasoning_length = (
+                len(reasoning_content)
+                if isinstance(reasoning_content, str)
+                else 0
+            )
+    
+            print(
+                f"[AI] 模型返回空 content "
+                f"(第 {attempt + 1}/{empty_response_retries + 1} 次, "
+                f"finish_reason={last_finish_reason}, "
+                f"reasoning_length={reasoning_length})"
+            )
+    
+            if attempt < empty_response_retries:
+                # 1 秒、2 秒
+                time.sleep(2 ** attempt)
+    
+        raise RuntimeError(
+            "AI 连续返回空响应"
+            f"（finish_reason={last_finish_reason}）"
+        )
 
     def validate_config(self) -> tuple[bool, str]:
         """
