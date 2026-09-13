@@ -1,16 +1,13 @@
 # ═══════════════════════════════════════════════════════════════
 #                    TrendRadar 配置文件
-#              AI应用 / Agent落地 每日情报版
+#               AI应用 + 每日综合情报版
 #
-# 使用方式：
-#   GitHub Actions 每天固定执行一次
-#   TrendRadar 内部调度关闭
-#   DeepSeek 负责 AI 筛选、翻译和分析
-#
-# 数据持久化：
-#   TrendRadar 使用 local SQLite
-#   GitHub Actions 通过 WebDAV/rclone
-#   将 output/ 与 InfiniCLOUD 同步
+# 核心目标：
+#   1. 每日时政 / 政策 / 经济民生不能缺失
+#   2. AI / Agent 应用落地作为核心专业方向
+#   3. 重点发现有启发性的 Agent 创意
+#   4. 保留能明显改变 AI 应用能力的关键工程技术
+#   5. 网络安全仅保留少量高价值信息
 #
 # Version: 2.4.0
 # ═══════════════════════════════════════════════════════════════
@@ -25,32 +22,31 @@ app:
 
 
 # ===============================================================
-# 1.5 调度系统
+# 1.5 调度
 #
-# 关闭 TrendRadar 内部时间窗口。
+# 不使用 TrendRadar 内部时间段调度。
+# 每天何时运行由 GitHub Actions cron 控制。
 #
-# 原因：
-# 1. 不再使用 office_hours
-# 2. 避免出现“当前时间段不执行推送”
-# 3. 由 GitHub Actions cron 决定每天什么时候运行
+# 关闭以后，每次运行：
+# collect = true
+# analyze = true
+# push = true
 #
-# 注意：
-# 如果 GitHub Actions 一天执行多次，
-# 关闭调度后每次运行都可能分析并推送。
-# 因此 workflow 应改成每天执行一次。
+# 因此 GitHub Actions 建议每天只执行一次。
 # ===============================================================
 schedule:
   enabled: false
-  preset: "morning_evening"
+  preset: "always_on"
 
 
 # ===============================================================
 # 2. 热榜平台
 #
-# 热榜用于补充：
-# 国家政策 / 科技产业 / 经济民生 / 社会重要事件
+# 作用：
+#   时政 / 政策 / 经济 / 民生 / 科技产业 / 社会热点
 #
-# AI应用情报的主要来源仍然是 RSS。
+# 其中部分平台同时加入 standalone，
+# 保证时政热点不会因为 AI 兴趣筛选而消失。
 # ===============================================================
 platforms:
   enabled: true
@@ -94,13 +90,14 @@ platforms:
 # ===============================================================
 # 3. RSS
 #
-# 原则：
-# AI应用案例 > Agent工程 > 产品能力 > 政策
-# > 少量安全 > 论文
+# 核心方向：
 #
-# rsshub.app 政策源暂时关闭：
-# GitHub Actions 出口请求公共 RSSHub 当前返回 403。
-# 后续换成自建 RSSHub 后再开启。
+# AI应用 / Agent落地
+# AI产品能力
+# 企业Agent工程案例
+# 少量AI安全
+#
+# 论文暂时关闭。
 # ===============================================================
 rss:
   enabled: true
@@ -112,13 +109,12 @@ rss:
   feeds:
 
     # ===========================================================
-    # 01 国家政策 / 政务
+    # 01 国家政策
     #
-    # 当前公共 rsshub.app 在 GitHub Actions 中返回 403，
-    # 暂时关闭，避免每次运行产生大量失败日志。
+    # 公共 rsshub.app 在 GitHub Actions 中目前出现 403。
+    # 暂时关闭。
     #
-    # 自建 RSSHub 后将 enabled 改为 true，
-    # 并把 rsshub.app 换成自己的域名。
+    # 后续部署自有 RSSHub 后重新开启。
     # ===========================================================
 
     - id: "gov-policy-latest"
@@ -218,7 +214,9 @@ rss:
 
 
     # ===========================================================
-    # 03 AI应用 / 企业落地 / Agent生产案例
+    # 03 AI应用 / Agent真实落地
+    #
+    # 当前最重要的一类 RSS。
     # ===========================================================
 
     - id: "aws-ai-ml"
@@ -258,8 +256,7 @@ rss:
       enabled: true
       max_age_days: 7
 
-    # 你之前运行时该 Feed 出现解析异常：
-    # 'str' object has no attribute 'get'
+    # 当前 TrendRadar 解析出现异常，暂时关闭
     - id: "microsoft-security"
       name: "安全｜Microsoft Security"
       url: "https://www.microsoft.com/en-us/security/blog/feed/"
@@ -268,7 +265,9 @@ rss:
 
 
     # ===========================================================
-    # 05 技术社区 / Agent创意发现
+    # 05 技术社区
+    #
+    # 用于发现 Agent 创意、开源项目、工程趋势。
     # ===========================================================
 
     - id: "hacker-news"
@@ -281,7 +280,7 @@ rss:
     # ===========================================================
     # 06 论文
     #
-    # 当前以应用落地为主，暂时全部关闭。
+    # 当前关注应用而非科研论文，默认关闭。
     # ===========================================================
 
     - id: "arxiv-ai"
@@ -304,22 +303,22 @@ rss:
 
 
 # ===============================================================
-# 4. 报告模式
+# 4. 报告
 #
-# GitHub Actions 每日仅执行一次，
-# 因此使用 daily 更符合“每日情报简报”。
+# GitHub Actions 每天运行一次，
+# 输出当天综合日报。
 # ===============================================================
 report:
   mode: "daily"
 
   display_mode: "keyword"
 
-  # 按 ai_interests.txt 的优先级显示
+  # 优先按照 ai_interests.txt 的兴趣顺序
   sort_by_position_first: true
 
   rank_threshold: 5
 
-  # 每个分类最多显示 6 条
+  # 避免单个类别占满简报
   max_news_per_keyword: 6
 
 
@@ -342,7 +341,9 @@ ai_filter:
   batch_interval: 2
 
   # 保持较高召回率。
-  # Agent应用案例的标题不一定包含明显技术关键词。
+  #
+  # Context Engineering / Agent Memory 等文章
+  # 标题可能不会直接写“应用案例”，不能筛得太严。
   min_score: 0.65
 
   reclassify_threshold: 0.75
@@ -357,18 +358,19 @@ ai_filter:
 # ===============================================================
 # 5. 展示
 #
-# 阅读顺序：
+# 双轨：
 #
-# AI日报结论
-# ↓
-# 热榜补充
-# ↓
-# 专业RSS原文
+# 第一轨：
+# standalone = 每日时政 / 经济 / 民生保底
+#
+# 第二轨：
+# hotlist + rss = DeepSeek 根据兴趣精筛
 # ===============================================================
 display:
 
   region_order:
     - ai_analysis
+    - standalone
     - hotlist
     - rss
 
@@ -380,24 +382,34 @@ display:
 
     rss: true
 
-    standalone: false
+    # 关键：
+    # 每日时政不经过 AI Filter
+    standalone: true
 
     ai_analysis: true
 
 
   standalone:
 
-    platforms: []
+    # 每日综合信息保底
+    platforms:
+      - "thepaper"
+      - "toutiao"
+      - "baidu"
+      - "cls-hot"
 
     rss_feeds: []
 
-    max_items: 10
+    # 每个平台前5条
+    # 最大20条，不至于压过专业内容
+    max_items: 5
 
 
 # ===============================================================
-# 6. 通知
+# 6. 推送
 # ===============================================================
 notification:
+
   enabled: true
 
   channels:
@@ -416,7 +428,6 @@ notification:
       bot_token: ""
       chat_id: ""
 
-    # 邮件建议继续通过 GitHub Secrets / 环境变量配置
     email:
       from: ""
       password: ""
@@ -443,18 +454,11 @@ notification:
 # ===============================================================
 # 7. 存储
 #
-# 非常重要：
+# InfiniCLOUD 使用 WebDAV。
 #
-# InfiniCLOUD 是 WebDAV，不是 S3。
-#
-# 因此 TrendRadar 本身使用 local。
-# GitHub Actions 在执行前后通过 rclone/WebDAV：
-#
-#   InfiniCLOUD → output/
-#   output/ → InfiniCLOUD
-#
-# 不要把 backend 设置成 remote，
-# 否则 TrendRadar 会要求 S3 参数。
+# TrendRadar 本身继续使用 local SQLite，
+# GitHub Actions 运行前后通过 rclone
+# 与 InfiniCLOUD 同步 output/ 状态。
 # ===============================================================
 storage:
 
@@ -462,12 +466,10 @@ storage:
 
   formats:
 
-    # SQLite 是主状态存储
     sqlite: true
 
     txt: false
 
-    # 邮件和网页简报需要 HTML
     html: true
 
 
@@ -478,7 +480,6 @@ storage:
     retention_days: 0
 
 
-  # 不使用 TrendRadar 自带 S3 remote
   remote:
 
     retention_days: 0
@@ -496,7 +497,6 @@ storage:
 
   pull:
 
-    # WebDAV 同步不走 TrendRadar pull
     enabled: false
 
     days: 7
@@ -509,10 +509,10 @@ ai:
 
   model: "deepseek/deepseek-v4-flash"
 
-  # 推荐环境变量 AI_API_KEY
+  # 推荐 GitHub Secret：
+  # AI_API_KEY
   api_key: ""
 
-  # DeepSeek 官方API留空
   api_base: ""
 
   timeout: 180
@@ -527,9 +527,15 @@ ai:
 
 
 # ===============================================================
-# 9. AI分析
+# 9. AI综合分析
 #
-# 生成每日“AI应用与Agent落地情报简报”
+# 同时分析：
+#
+# AI筛选后的内容
+# +
+# RSS专业资讯
+# +
+# 每日时政 standalone
 # ===============================================================
 ai_analysis:
 
@@ -539,20 +545,17 @@ ai_analysis:
 
   prompt_file: "ai_analysis_prompt.txt"
 
-  # 因为 report.mode 已固定 daily，
-  # 跟随即可。
   mode: "follow_report"
 
-  # AI Filter 已做第一层过滤，
-  # 60 条足够做一次日报分析。
   max_news_for_analysis: 60
 
-  # AI应用案例主要来自 RSS
   include_rss: true
 
-  include_standalone: false
+  # 关键：
+  # 让 DeepSeek 看到每日时政热点
+  include_standalone: true
 
-  # 不浪费 token 分析热榜排名轨迹
+  # 不分析完整排名轨迹，节约Token
   include_rank_timeline: false
 
 
@@ -573,12 +576,11 @@ ai_translation:
 
   scope:
 
-    # 国内热榜无需翻译
     hotlist: false
 
-    # 英文专业RSS需要翻译
     rss: true
 
+    # standalone 都是中文热榜
     standalone: false
 
 
@@ -587,14 +589,12 @@ ai_translation:
 # ===============================================================
 advanced:
 
-  # 标签提取问题排查期间先开启。
-  # 等 AI Filter 修好后可以改回 false。
+  # 目前 AI 标签提取仍在排查，
+  # 暂时保持 true。
+  #
+  # 确认正常后改成 false。
   debug: true
 
-
-  # -------------------------------------------------------------
-  # 版本检查
-  # -------------------------------------------------------------
 
   version_check_url: "https://raw.githubusercontent.com/sansan0/TrendRadar/refs/heads/master/version"
 
@@ -602,10 +602,6 @@ advanced:
 
   configs_version_check_url: "https://raw.githubusercontent.com/sansan0/TrendRadar/refs/heads/master/version_configs"
 
-
-  # -------------------------------------------------------------
-  # 热榜
-  # -------------------------------------------------------------
 
   crawler:
 
@@ -615,10 +611,6 @@ advanced:
 
     default_proxy: "http://127.0.0.1:10801"
 
-
-  # -------------------------------------------------------------
-  # RSS
-  # -------------------------------------------------------------
 
   rss:
 
@@ -630,10 +622,6 @@ advanced:
 
     proxy_url: ""
 
-
-  # -------------------------------------------------------------
-  # 热榜排序权重
-  # -------------------------------------------------------------
 
   weight:
 
