@@ -2,8 +2,8 @@ name: TrendRadar Daily Briefing
 
 on:
   schedule:
-    # UTC 00:00 = 北京时间 08:00
-    - cron: "0 0 * * *"
+    - cron: "17 8 * * *"
+      timezone: "Asia/Shanghai"
 
   # 允许手动运行测试
   workflow_dispatch:
