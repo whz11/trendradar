@@ -224,7 +224,10 @@ class AIFilter:
             print(f"[AI筛选][DEBUG] === Prompt 结束 ===")
 
         try:
-            response = self.client.chat(messages)
+            response = self.client.chat(messages,
+    response_format={
+        "type": "json_object"
+    })
 
             if self.debug:
                 print(f"\n[AI筛选][DEBUG] === 标签更新 AI 原始响应 ===")
