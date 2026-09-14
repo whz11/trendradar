@@ -101,9 +101,24 @@ class AIClient:
                 }
             }
     
-        # 合并额外参数
+        # 其余 kwargs
         for key, value in kwargs.items():
-            if key not in params:
+        
+            if key in {
+                "temperature",
+                "timeout",
+                "num_retries",
+                "max_tokens",
+                "empty_response_retries",
+            }:
+                continue
+        
+            if key == "extra_body":
+                params["extra_body"] = {
+                    **params.get("extra_body", {}),
+                    **value,
+                }
+            else:
                 params[key] = value
     
         last_finish_reason = None
