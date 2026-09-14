@@ -4,7 +4,7 @@ on:
   schedule:
     # 每天北京时间 08:17
     # 使用非整点分钟，避开 GitHub Actions 调度高峰
-    - cron: "30 2 * * *"
+    - cron: "30 22 * * *"
   # 允许手动运行测试
   workflow_dispatch:
 
