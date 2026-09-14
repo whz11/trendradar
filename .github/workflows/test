@@ -1,0 +1,46 @@
+name: Schedule Test
+
+on:
+  schedule:
+    # 每小时 07、27、47 分触发一次
+    # 专门用于测试 GitHub schedule
+    - cron: "7,27,47 * * * *"
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Show trigger info
+        run: |
+          echo "================================"
+          echo "GitHub schedule test"
+          echo "================================"
+
+          echo "Event:"
+          echo "${{ github.event_name }}"
+
+          echo ""
+
+          echo "UTC time:"
+          date -u
+
+          echo ""
+
+          echo "Local Asia/Shanghai time:"
+          TZ=Asia/Shanghai date
+
+          echo ""
+
+          echo "Branch:"
+          echo "${{ github.ref }}"
+
+          echo ""
+
+          echo "Default branch:"
+          echo "${{ github.event.repository.default_branch }}"
