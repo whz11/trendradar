@@ -92,13 +92,13 @@ class AIClient:
         # - 避免 reasoning_content 占满输出预算
         # - 提高 JSON 输出稳定性
         # ==========================================================
-        if (
-            self.model.startswith("deepseek/")
-            and "thinking" not in kwargs
-            and "reasoning_effort" not in kwargs
-        ):
-            params["thinking"] = {
-                "type": "disabled"
+        if self.model.startswith("deepseek/"):
+        
+            params["extra_body"] = {
+                **params.get("extra_body", {}),
+                "thinking": {
+                    "type": "disabled"
+                }
             }
     
         # 合并额外参数
