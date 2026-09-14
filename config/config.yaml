@@ -336,7 +336,7 @@ filter:
 # ===============================================================
 ai_filter:
 
-  batch_size: 150
+  batch_size: 50
 
   batch_interval: 2
 
@@ -570,7 +570,7 @@ ai_translation:
 
   prompt_file: "ai_translation_prompt.txt"
 
-  batch_size: 100
+  batch_size: 50
 
   batch_interval: 2
 
